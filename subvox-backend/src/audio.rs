@@ -58,13 +58,10 @@ impl WavFile {
     }
 
     pub fn as_f32_slice(&self) -> Option<&[f32]> {
-        if let SampleFormat::Float = self.format.format
-            && self.format.bits_per_sample == 32
-        {
-            try_cast_slice::<u8, f32>(self.data_bytes()).ok()
-        } else {
-            None
+        if self.format.format != SampleFormat::Pcm || self.format.bits_per_sample != 32 {
+            return None;
         }
+        try_cast_slice::<u8, f32>(self.data_bytes()).ok()
     }
 
     pub fn to_i16_vec(&self) -> Vec<i16> {
@@ -100,13 +97,8 @@ impl WavFile {
                 .data_bytes()
                 .chunks_exact(3)
                 .map(|b| {
-                    let v = i32::from_le_bytes([
-                        b[0],
-                        b[1],
-                        b[2],
-                        if b[2] & 0x80 != 0 { 0xFF } else { 0 },
-                    ]);
-                    v as f32 / 8_388_608.0 // 2^23
+                    let v = i32::from_le_bytes([b[0], b[1], b[2], 0]);
+                    ((v << 8) >> 8) as f32 / 8_388_608.0 // 2^23
                 })
                 .collect(),
             (SampleFormat::Pcm, 32) => self
@@ -147,18 +139,28 @@ pub fn load_wav<P: AsRef<Path>>(path: P) -> WavFile {
     let mmap = unsafe { MmapOptions::new().map(&file) }
         .unwrap_or_else(|e| panic!("failed to mmap {}: {e}", path.as_ref().display()));
 
+    // Hint to OS that the the file will be read sequentially
+    // Causes pages to be agressively prefetched
+    let _ = mmap.advise(memmap2::Advice::Sequential);
+
     let file_len = mmap.len();
     assert!(file_len >= 12, "file too small to be a WAV file");
-    assert_eq!(&mmap[0..4], RIFF, "missing RIFF header");
-    assert_eq!(&mmap[8..12], WAVE, "missing WAVE header");
+
+    let (header, _) = mmap.split_at(12);
+
+    assert_eq!(&header[0..4], RIFF, "missing RIFF header");
+    assert_eq!(&header[8..12], WAVE, "missing WAVE header");
 
     let mut offset = 12usize;
-    let mut fmt: Option<WavFormat> = None;
-    let mut data_range: Option<Range<usize>> = None;
+    let mut fmt = None;
+    let mut data_range = None;
 
     while offset + 8 <= file_len {
-        let chunk_id = &mmap[offset..offset + 4];
-        let chunk_size = read_u32_le(&mmap[offset + 4..offset + 8]) as usize;
+        // TODO: Handle unwraps
+        let chunk_header: [u8; 8] = mmap[offset..offset + 8].try_into().unwrap();
+
+        let chunk_id = &chunk_header[0..4];
+        let chunk_size = u32::from_le_bytes(chunk_header[4..8].try_into().unwrap()) as usize;
         let body_start = offset + 8;
 
         let available = file_len.saturating_sub(body_start);
@@ -168,15 +170,16 @@ pub fn load_wav<P: AsRef<Path>>(path: P) -> WavFile {
         if chunk_id == FMT_ {
             assert!(effective_size >= 16, "fmt chunk too small");
             let fb = &mmap[body_start..body_end];
-            let format_tag = read_u16_le(&fb[0..2]);
-            let channels = read_u16_le(&fb[2..4]);
-            let sample_rate = read_u32_le(&fb[4..8]);
-            let block_align = read_u16_le(&fb[12..14]);
-            let bits_per_sample = read_u16_le(&fb[14..16]);
+
+            let format_tag = u16::from_le_bytes(fb[0..2].try_into().unwrap());
+            let channels = u16::from_le_bytes(fb[2..4].try_into().unwrap());
+            let sample_rate = u32::from_le_bytes(fb[4..8].try_into().unwrap());
+            let block_align = u16::from_le_bytes(fb[12..14].try_into().unwrap());
+            let bits_per_sample = u16::from_le_bytes(fb[14..16].try_into().unwrap());
 
             let resolved_tag = if format_tag == 0xFFFE {
                 assert!(effective_size >= 40, "extensible fmt chunk too small");
-                read_u16_le(&fb[24..26]) // first two bytes of the sub-format GUID
+                u16::from_le_bytes(fb[24..26].try_into().unwrap()) // first two bytes of the sub-format GUID
             } else {
                 format_tag
             };
@@ -204,9 +207,7 @@ pub fn load_wav<P: AsRef<Path>>(path: P) -> WavFile {
         } else if chunk_id == DATA {
             data_range = Some(body_start..body_end);
         }
-        // else: skip unknown chunk (LIST, fact, cue, id3, JUNK, etc.)
 
-        // RIFF chunks are padded to an even number of bytes.
         offset = body_start + chunk_size + (chunk_size & 1);
     }
 
