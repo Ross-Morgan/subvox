@@ -7,4 +7,12 @@ edition = "2024"
 bytemuck = { version = "1.25.1", features = ["derive", "track_caller"] }
 color-eyre = "0.6.5"
 memmap2 = "0.9.11"
+mimalloc = "0.1.52"
 realfft = { version = "3.5.0", features = ["avx", "neon", "sse"] }
+
+[dev-dependencies]
+criterion = "0.8.2"
+
+[[bench]]
+name = "stft_bench"
+harness = false
