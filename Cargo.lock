@@ -278,6 +278,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "fearless_simd"
+version = "0.4.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b97b65636e5b9ef369943878ac74335ba1c55c1cb6adbf1e2c293c624248d693"
+
+[[package]]
 name = "find-msvc-tools"
 version = "0.1.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -472,6 +478,17 @@ checksum = "30d5b2194ed13191c1999ae0704b7839fb18384fa22e49b57eeaa97d79ce40da"
 dependencies = [
  "libc",
  "winapi",
+]
+
+[[package]]
+name = "phastft"
+version = "0.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "59aae924086efd377c3328e9405fb7636b3203771a0fb160d5776b6745875f80"
+dependencies = [
+ "fearless_simd",
+ "num-traits",
+ "rayon",
 ]
 
 [[package]]
@@ -707,6 +724,8 @@ dependencies = [
  "criterion",
  "memmap2",
  "mimalloc",
+ "phastft",
+ "rayon",
  "realfft",
 ]
 
