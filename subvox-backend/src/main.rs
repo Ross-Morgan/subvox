@@ -9,7 +9,7 @@ use subvox_backend::{FourierTransformer, load_audio_file};
 fn main() -> color_eyre::Result<()> {
     color_eyre::install()?;
 
-    let file = load_audio_file("assets/vocal-1.wav").expect("Failed to load file");
+    let file = load_audio_file("assets/growl.wav").expect("Failed to load file");
     let frames = file.to_f32_vec();
 
     println!("{}", frames.len());

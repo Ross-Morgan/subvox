@@ -29,3 +29,4 @@ pub fn load_audio_file<P: AsRef<Path>>(path: P) -> Result<audio::WavFile, std::i
 }
 
 pub use fft::FourierTransformer;
+pub use fft::par_stft;
