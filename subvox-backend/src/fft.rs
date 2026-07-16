@@ -1,6 +1,16 @@
-use std::{collections::HashMap, f32::consts::PI};
+use std::{cell::RefCell, collections::HashMap, f32::consts::PI, sync::Arc};
 
-use realfft::{RealFftPlanner, num_complex::Complex32};
+use color_eyre::Section;
+use rayon::{
+    iter::{IndexedParallelIterator, ParallelIterator},
+    slice::{ParallelSlice, ParallelSliceMut},
+};
+use realfft::{RealFftPlanner, RealToComplex, num_complex::Complex32};
+
+thread_local! {
+    static WINDOWED_INPUT_BUFFER: RefCell<Vec<f32>> = RefCell::new(Vec::new());
+    static SCRATCH_BUFFER: RefCell<Vec<Complex32>> = RefCell::new(Vec::new());
+}
 
 pub struct StftResult {
     data: Vec<Complex32>,
@@ -105,4 +115,53 @@ impl FourierTransformer {
 
         StftResult { data: frames, bins }
     }
+}
+
+pub fn par_stft(
+    samples: &[f32],
+    window_size: usize,
+    hop_size: usize,
+    r2c: Arc<dyn RealToComplex<f32>>,
+) -> StftResult {
+    assert!(hop_size > 0, "hop_size must be non-zero");
+    assert!(
+        window_size <= samples.len(),
+        "window size exceeds singal length"
+    );
+
+    let window = (0..window_size)
+        .map(|n| (PI * n as f32 / (window_size as f32 - 1.0)).sin().powi(2))
+        .collect::<Vec<_>>();
+    let frame_count = (samples.len() - window_size) / hop_size + 1;
+    let bins = window_size / 2 + 1;
+
+    let input_window = samples.par_windows(window_size).step_by(hop_size);
+
+    let mut frames = vec![Complex32::ZERO; frame_count * bins];
+    let frame_chunks = frames.par_chunks_mut(window_size);
+
+    frame_chunks
+        .zip_eq(input_window)
+        .for_each(|(frame_chunk, input_window)| {
+            WINDOWED_INPUT_BUFFER.with(|i| {
+                let mut input_buffer = i.borrow_mut();
+                input_buffer.resize(input_window.len(), 0.0);
+                input_buffer.copy_from_slice(input_window);
+
+                input_buffer
+                    .iter_mut()
+                    .enumerate()
+                    .for_each(|(window_idx, input_entry)| *input_entry *= window[window_idx]);
+
+                SCRATCH_BUFFER.with(|s| {
+                    let mut scratch_buffer = s.borrow_mut();
+                    scratch_buffer.resize(r2c.get_scratch_len(), Complex32::ZERO);
+
+                    r2c.process_with_scratch(&mut input_buffer, frame_chunk, &mut scratch_buffer)
+                        .with_note(|| "FFT Failed")
+                        .unwrap();
+                });
+            });
+        });
+    StftResult { data: frames, bins }
 }
