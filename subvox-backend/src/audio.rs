@@ -116,16 +116,6 @@ impl WavFile {
     }
 }
 
-#[inline]
-fn read_u16_le(b: &[u8]) -> u16 {
-    u16::from_le_bytes([b[0], b[1]])
-}
-
-#[inline]
-fn read_u32_le(b: &[u8]) -> u32 {
-    u32::from_le_bytes([b[0], b[1], b[2], b[3]])
-}
-
 /// Load a WAV file
 ///
 /// # Panics
