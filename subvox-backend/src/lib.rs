@@ -2,7 +2,12 @@
 static GLOBAL: mimalloc::MiMalloc = mimalloc::MiMalloc;
 
 mod audio;
+mod cepstrum;
 mod fft;
+mod lpc;
+mod notes;
+mod shr;
+mod tilt;
 
 use std::{path::Path, process::Command};
 
@@ -28,5 +33,12 @@ pub fn load_audio_file<P: AsRef<Path>>(path: P) -> Result<audio::WavFile, std::i
     Ok(audio::load_wav(wav_path))
 }
 
-pub use fft::FourierTransformer;
-pub use fft::par_stft;
+pub use fft::{FourierTransformer, par_stft};
+
+// Analysis stuff
+pub use cepstrum::{par_cepstrum, par_cpp};
+pub use lpc::par_lpc;
+pub use shr::par_shr;
+pub use tilt::par_tilt;
+
+pub use notes::Note;
