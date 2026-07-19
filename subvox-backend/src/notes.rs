@@ -2,13 +2,15 @@
 //!
 //! 12TET ON TOP
 
+use std::fmt::Debug;
+
 /// Middle C at Concert Pitch
 pub const C4: f32 = 261.6;
 
 /// 50c = half a note interval = 1/24th of an octave
 pub const FIFTY_CENTS: f32 = 1.0 / 24.0;
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum NoteName {
     Ab,
     A,
@@ -22,6 +24,15 @@ pub enum NoteName {
     F,
     Gb,
     G,
+}
+
+#[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+pub struct NoteKey(NoteName, i8);
+
+impl Debug for NoteKey {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(&self.to_string())
+    }
 }
 
 impl NoteName {
@@ -43,7 +54,33 @@ impl NoteName {
     }
 }
 
-pub struct Interval(i8);
+impl ToString for NoteName {
+    fn to_string(&self) -> String {
+        match self {
+            Self::C => "C",
+            Self::Db => "Db",
+            Self::D => "D",
+            Self::Eb => "Eb",
+            Self::E => "E",
+            Self::F => "F",
+            Self::Gb => "Gb",
+            Self::G => "G",
+            Self::Ab => "Ab",
+            Self::A => "A",
+            Self::Bb => "Bb",
+            Self::B => "B",
+        }
+        .to_string()
+    }
+}
+
+impl ToString for NoteKey {
+    fn to_string(&self) -> String {
+        format!("{}{}", self.0.to_string(), self.1)
+    }
+}
+
+pub struct Interval(pub i8);
 
 #[derive(Clone, Copy, Debug, PartialEq, PartialOrd)]
 pub struct Note {
@@ -54,6 +91,17 @@ pub struct Note {
 }
 
 impl Note {
+    pub const CONCERT_PITCH: Note = Note {
+        frequency: 440.0,
+        nearest_note: NoteName::A,
+        octave: 4,
+        cents_off: 0,
+    };
+
+    pub fn key(&self) -> NoteKey {
+        NoteKey(self.nearest_note, self.octave)
+    }
+
     pub fn new(frequency: f32) -> Self {
         // Integer part is octave number, decimal part is note + cents
         let log_frequency = (frequency / C4).log2() + 4.0;
