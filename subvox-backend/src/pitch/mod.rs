@@ -1,0 +1,88 @@
+mod cpp;
+mod hps;
+mod yin;
+
+use std::collections::HashMap;
+
+pub use cpp::{CepstralPitchCandidate, CepstralPitchResult, cpp_pitch_candidates};
+pub use hps::{HpsPitchCandidate, HpsPitchResult, hps_pitch_candidates};
+pub use yin::{YinPitchCandidate, YinPitchResult, yin_pitch_candidates};
+
+use crate::{Note, cepstrum::CepstrumResult, fft::StftResult, notes::NoteKey};
+
+pub struct PitchAlgorithmCandidateDistribution {
+    pub cpp: usize,
+    pub hps: usize,
+    pub yin: usize,
+}
+
+pub fn combined_pitch_estimate(
+    frames: &[f32],
+    spectra: &StftResult,
+    cepstra: &CepstrumResult,
+    sample_rate: u32,
+    window_size: usize,
+    hop_size: usize,
+    min_frequency: f32,
+    max_frequency: f32,
+    algorithm_distribution: PitchAlgorithmCandidateDistribution,
+) -> Vec<NoteKey> {
+    let cpp_candidates = cpp_pitch_candidates(
+        cepstra,
+        sample_rate as f32,
+        min_frequency,
+        max_frequency,
+        algorithm_distribution.cpp,
+    );
+    let hps_candidates = hps_pitch_candidates(
+        spectra,
+        sample_rate as f32,
+        min_frequency,
+        max_frequency,
+        5,
+        algorithm_distribution.hps,
+    );
+    let yin_candidates = yin_pitch_candidates(
+        frames,
+        window_size,
+        hop_size,
+        sample_rate as f32,
+        min_frequency,
+        max_frequency,
+        0.1,
+        algorithm_distribution.yin,
+    );
+
+    cpp_candidates
+        .candidates
+        .iter()
+        .zip(hps_candidates.candidates.iter())
+        .zip(yin_candidates.candidates.iter())
+        .map(|((cpp, hps), yin)| {
+            let mut map = HashMap::new();
+
+            for cpp_candidate in cpp.iter() {
+                map.entry(Note::new(cpp_candidate.frequency).key())
+                    .and_modify(|p| *p += cpp_candidate.prominence)
+                    .or_insert(cpp_candidate.prominence);
+            }
+
+            for hps_candidate in hps.iter() {
+                map.entry(Note::new(hps_candidate.frequency).key())
+                    .and_modify(|p| *p += hps_candidate.prominence)
+                    .or_insert(hps_candidate.prominence);
+            }
+
+            for yin_candidate in cpp.iter() {
+                map.entry(Note::new(yin_candidate.frequency).key())
+                    .and_modify(|p| *p += yin_candidate.prominence)
+                    .or_insert(yin_candidate.prominence);
+            }
+
+            *map.iter()
+                .max_by(|&(_, a), &(_, b)| a.total_cmp(b))
+                .map(|(key, _)| key)
+                .unwrap()
+        })
+        .collect::<Vec<_>>()
+}
