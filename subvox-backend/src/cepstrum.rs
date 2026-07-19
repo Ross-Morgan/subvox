@@ -3,7 +3,7 @@ use std::sync::Arc;
 use rayon::prelude::*;
 use realfft::{ComplexToReal, num_complex::Complex32};
 
-use crate::fft::StftResult;
+use crate::{fft::StftResult, stats::linear_regression_full};
 
 // Example used
 const CEPSTRUM_LOG_CONSTANT: f32 = 1e-10;
@@ -103,27 +103,4 @@ pub fn par_cpp(
             peak_val - expected
         })
         .collect()
-}
-
-// TODO: Refactor stats functions into their own module and reduce repetition
-fn linear_regression_full(x: &[f32], y: &[f32]) -> (f32, f32) {
-    let n = x.len() as f32;
-    let mean_x = x.iter().sum::<f32>() / n;
-    let mean_y = y.iter().sum::<f32>() / n;
-
-    let mut cov = 0.0f32;
-    let mut var_x = 0.0f32;
-    for (&xi, &yi) in x.iter().zip(y.iter()) {
-        let dx = xi - mean_x;
-        cov += dx * (yi - mean_y);
-        var_x += dx * dx;
-    }
-
-    let slope = if var_x.abs() < f32::EPSILON {
-        0.0
-    } else {
-        cov / var_x
-    };
-    let intercept = mean_y - slope * mean_x;
-    (slope, intercept)
 }
