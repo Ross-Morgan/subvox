@@ -1,5 +1,5 @@
 use realfft::RealFftPlanner;
-use subvox_backend::{Note, load_audio_file};
+use subvox_backend::load_audio_file;
 
 // The Plan (tm)
 // 1. Load file
@@ -7,15 +7,17 @@ use subvox_backend::{Note, load_audio_file};
 // 3. Compute Logarithm of Magnitudes
 // 4. Compute Cepstrum (Inverse Fourier Transform)
 
-const WINDOW_SIZE: usize = 8192;
+const WINDOW_SIZE: usize = 16384;
 const HOP_SIZE: usize = 1024;
 const LPC_ORDER: usize = 12;
 
 fn main() -> color_eyre::Result<()> {
     color_eyre::install()?;
 
-    let file = load_audio_file("assets/growl.wav").expect("Failed to load file");
+    let file = load_audio_file("assets/sixteen-tons.wav").expect("Failed to load file");
     let frames = file.to_f32_vec();
+
+    let sample_rate = file.format().sample_rate;
 
     let mut planner = RealFftPlanner::<f32>::new();
 
@@ -28,11 +30,30 @@ fn main() -> color_eyre::Result<()> {
 
     let spectra = subvox_backend::par_stft(&frames, WINDOW_SIZE, HOP_SIZE, r2c);
     let cepstra = subvox_backend::par_cepstrum(&spectra, c2r);
-    let lpc = subvox_backend::par_lpc(&frames, WINDOW_SIZE, HOP_SIZE, LPC_ORDER);
+    let _lpc = subvox_backend::par_lpc(&frames, WINDOW_SIZE, HOP_SIZE, LPC_ORDER);
 
-    let n = Note::new(440.0);
+    let algorithm_distribution = subvox_backend::pitch::PitchAlgorithmCandidateDistribution {
+        cpp: 3,
+        hps: 3,
+        yin: 3,
+    };
 
-    println!("{n:?}");
+    let mut notes = subvox_backend::pitch::combined_pitch_estimate(
+        &frames,
+        &spectra,
+        &cepstra,
+        sample_rate,
+        WINDOW_SIZE,
+        HOP_SIZE,
+        50.0,
+        550.0,
+        algorithm_distribution,
+    );
+
+    notes.dedup();
+
+    dbg!(&notes);
+    dbg!(notes.len());
 
     Ok(())
 }

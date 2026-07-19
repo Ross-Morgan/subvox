@@ -9,6 +9,11 @@ mod notes;
 mod shr;
 mod tilt;
 
+// Pitch detection algorithms
+pub mod pitch;
+
+mod stats;
+
 use std::{path::Path, process::Command};
 
 /// Load audio file, converting the source file to a .wav if it is not already
@@ -38,6 +43,7 @@ pub use fft::{FourierTransformer, par_stft};
 // Analysis stuff
 pub use cepstrum::{par_cepstrum, par_cpp};
 pub use lpc::par_lpc;
+pub use pitch::{cpp_pitch_candidates, hps_pitch_candidates, yin_pitch_candidates};
 pub use shr::par_shr;
 pub use tilt::par_tilt;
 
