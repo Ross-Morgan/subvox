@@ -1,6 +1,6 @@
 [workspace]
 resolver = "3"
-members = ["subvox-backend", "subvox-frontend"]
+members = ["subvox-backend", "subvox-common", "subvox-frontend"]
 
 [profile.release]
 lto = "fat"
@@ -8,3 +8,8 @@ codegen-units = 1
 opt-level = 3
 panic = "abort"
 strip = "symbols"
+
+[profile.profiling]
+inherits = "release"
+debug = true
+strip = "none"
