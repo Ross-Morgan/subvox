@@ -73,10 +73,11 @@ pub fn combined_pitch_estimate(
                     .or_insert(hps_candidate.prominence);
             }
 
-            for yin_candidate in cpp.iter() {
+            // TODO: No idea what range `cmnd_value` can lie in. Experiment.
+            for yin_candidate in yin.iter() {
                 map.entry(Note::new(yin_candidate.frequency).key())
-                    .and_modify(|p| *p += yin_candidate.prominence)
-                    .or_insert(yin_candidate.prominence);
+                    .and_modify(|p| *p += yin_candidate.cmnd_value.recip())
+                    .or_insert(yin_candidate.cmnd_value.recip());
             }
 
             *map.iter()

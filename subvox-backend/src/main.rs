@@ -6,6 +6,9 @@ use subvox_backend::load_audio_file;
 // 2. Compute Fourier Transform
 // 3. Compute Logarithm of Magnitudes
 // 4. Compute Cepstrum (Inverse Fourier Transform)
+// 5. Derive metrics from different transforms
+// 6. Analyse and process
+// 7. Profit???
 
 const WINDOW_SIZE: usize = 16384;
 const HOP_SIZE: usize = 1024;
@@ -45,7 +48,7 @@ fn main() -> color_eyre::Result<()> {
         sample_rate,
         WINDOW_SIZE,
         HOP_SIZE,
-        50.0,
+        65.0,
         550.0,
         algorithm_distribution,
     );
