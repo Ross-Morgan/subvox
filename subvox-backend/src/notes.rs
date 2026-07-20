@@ -1,31 +1,39 @@
 //! Note and Interval Representation
 //!
-//! 12TET ON TOP
+//! TODO: Make octave numbers strictly positive (I doubt I'll ever need negative octaves)
 
 use std::fmt::Debug;
 
-/// Middle C at Concert Pitch
+/// Middle C given A4 = 440Hz
 pub const C4: f32 = 261.6;
 
 /// 50c = half a note interval = 1/24th of an octave
 pub const FIFTY_CENTS: f32 = 1.0 / 24.0;
 
+/// Named Note
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum NoteName {
+    /// G# / Ab
     Ab,
     A,
+    /// A# / Bb
     Bb,
     B,
     C,
+    /// C# / Db
     Db,
     D,
+    /// D# / Eb
     Eb,
     E,
     F,
+    /// F# / Gb
     Gb,
     G,
 }
 
+/// Minimal note representation that implements [`Hash`]
+/// Meant to be used as a key in a `Hash*` container.
 #[derive(Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct NoteKey(NoteName, i8);
 
@@ -36,6 +44,7 @@ impl Debug for NoteKey {
 }
 
 impl NoteName {
+    /// Note's position in the octave C = 0, B = 11
     pub const fn number(self) -> i8 {
         match self {
             Self::C => 0,
@@ -80,6 +89,7 @@ impl ToString for NoteKey {
     }
 }
 
+/// Interval between two notes in semitones
 pub struct Interval(pub i8);
 
 #[derive(Clone, Copy, Debug, PartialEq, PartialOrd)]
@@ -98,7 +108,8 @@ impl Note {
         cents_off: 0,
     };
 
-    pub fn key(&self) -> NoteKey {
+    #[inline]
+    pub const fn key(&self) -> NoteKey {
         NoteKey(self.nearest_note, self.octave)
     }
 
@@ -139,10 +150,12 @@ impl Note {
         }
     }
 
+    /// Semitones from this note to the other note
     pub fn interval_to(&self, other: &Note) -> Interval {
         Interval(other.semitone_number() - self.semitone_number())
     }
 
+    /// Semitones above/below C0
     fn semitone_number(&self) -> i8 {
         self.octave * 12 + self.nearest_note.number()
     }
