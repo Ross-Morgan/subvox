@@ -4,7 +4,7 @@ fn main() -> eframe::Result<()> {
     eframe::run_native(
         "Subvox",
         native_options,
-        Box::new(|cc| Ok(Box::new(subvox_frontend::App::new(cc)))),
+        Box::new(|cc| Ok(Box::new(subvox_frontend::App::new(cc)?))),
     )?;
 
     Ok(())
