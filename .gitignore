@@ -1,1 +1,6 @@
 /target
+
+# Benchmark related files
+flamegraph.svg
+perf.data
+perf.data.old
