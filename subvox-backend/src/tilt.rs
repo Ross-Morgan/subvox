@@ -1,6 +1,6 @@
 use rayon::prelude::*;
 
-use crate::{fft::StftResult, stats::linear_regression_slope};
+use crate::{fft::StftResult, stats::linear_regression};
 
 const TILT_LOG_CONSTANT: f32 = 1e-10;
 
@@ -30,7 +30,7 @@ pub fn par_tilt(stft: &StftResult, sample_rate: f32) -> Vec<f32> {
                 .map(|c| c.norm().max(TILT_LOG_CONSTANT).ln())
                 .collect::<Vec<f32>>();
 
-            linear_regression_slope(&log_frequencies, &log_magnitudes)
+            linear_regression(&log_frequencies, &log_magnitudes).slope
         })
         .collect::<Vec<_>>()
 }

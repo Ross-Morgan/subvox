@@ -3,7 +3,10 @@ use std::sync::Arc;
 use rayon::prelude::*;
 use realfft::{ComplexToReal, num_complex::Complex32};
 
-use crate::{fft::StftResult, stats::linear_regression_full};
+use crate::{
+    fft::StftResult,
+    stats::{LinearRegression, linear_regression},
+};
 
 // Example used
 const CEPSTRUM_LOG_CONSTANT: f32 = 1e-10;
@@ -85,7 +88,7 @@ pub fn par_cpp(
 
             // Regression line over the full cepstrum (the "noise floor" trend).
             let x: Vec<f32> = (0..q).map(|i| i as f32).collect();
-            let (slope, intercept) = linear_regression_full(&x, &log_cepstrum);
+            let LinearRegression { slope, intercept } = linear_regression(&x, &log_cepstrum);
 
             // Find the peak within the pitch-plausible quefrency range.
             let (peak_idx, peak_val) = log_cepstrum[min_quefrency..=max_quefrency]

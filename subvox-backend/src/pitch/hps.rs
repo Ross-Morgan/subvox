@@ -17,8 +17,7 @@ pub struct HpsPitchCandidate {
 
 impl Debug for HpsPitchCandidate {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let note = Note::new(self.frequency);
-        note.fmt(f)
+        Note::new(self.frequency).fmt(f)
     }
 }
 
@@ -68,9 +67,6 @@ pub fn hps_pitch_candidates(
                     if downsampled_idx < magnitudes.len() {
                         product[bin] *= magnitudes[downsampled_idx];
                     } else {
-                        // No data at this harmonic position (would exceed
-                        // Nyquist) — zero out rather than leaving a partial
-                        // product that only reflects lower harmonics.
                         product[bin] = 0.0;
                     }
                 }

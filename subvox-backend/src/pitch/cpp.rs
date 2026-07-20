@@ -12,7 +12,7 @@ const MIN_PEAK_SEPARATION: usize = 3;
 use crate::{
     Note,
     cepstrum::CepstrumResult,
-    stats::{find_local_maxima, linear_regression_full, parabolic_interpolate},
+    stats::{LinearRegression, find_local_maxima, linear_regression, parabolic_interpolate},
 };
 
 pub struct CepstralPitchCandidate {
@@ -61,7 +61,7 @@ pub fn cpp_pitch_candidates(
                 .collect();
 
             let x: Vec<f32> = (min_quefrency..=max_quefrency).map(|i| i as f32).collect();
-            let (slope, intercept) = linear_regression_full(&x, &log_cepstrum);
+            let LinearRegression { slope, intercept } = linear_regression(&x, &log_cepstrum);
 
             let mut peaks = find_local_maxima(&log_cepstrum, min_quefrency, max_quefrency);
 

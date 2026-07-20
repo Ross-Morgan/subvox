@@ -2,15 +2,12 @@
 
 // TODO: Rename or subdivide module since it has outgrown its original feature set
 
-use std::{cell::RefCell, collections::HashMap, f32::consts::PI, sync::Arc};
+use std::sync::Arc;
 
 use rayon::prelude::*;
 use realfft::{RealFftPlanner, RealToComplex, num_complex::Complex32};
 
-thread_local! {
-    static WINDOWED_INPUT_BUFFER: RefCell<Vec<f32>> = RefCell::new(Vec::new());
-    static SCRATCH_BUFFER: RefCell<Vec<Complex32>> = RefCell::new(Vec::new());
-}
+use crate::windowing::get_hann_window;
 
 pub struct StftResult {
     pub data: Vec<Complex32>,
@@ -19,7 +16,7 @@ pub struct StftResult {
 
 impl StftResult {
     pub fn frame(&self, i: usize) -> &[Complex32] {
-        &self.data[i * self.bins..(i + 1) * self.bins]
+        &self.data[(i * self.bins)..((i + 1) * self.bins)]
     }
     pub fn frame_count(&self) -> usize {
         self.data.len() / self.bins
@@ -29,7 +26,6 @@ impl StftResult {
 pub struct FourierTransformer {
     planner: RealFftPlanner<f32>,
     // TODO: Implement generic windowing strategy
-    window_cache: HashMap<usize, Vec<f32>>,
 }
 
 impl FourierTransformer {
@@ -37,17 +33,7 @@ impl FourierTransformer {
     pub fn new() -> Self {
         Self {
             planner: RealFftPlanner::new(),
-            window_cache: HashMap::new(),
         }
-    }
-
-    // TODO: Move function elsewhere. Put here for convenience
-    fn hann_window(&mut self, size: usize) -> &[f32] {
-        self.window_cache.entry(size).or_insert_with(|| {
-            (0..size)
-                .map(|n| (PI * n as f32 / (size as f32 - 1.0)).sin().powi(2))
-                .collect()
-        })
     }
 
     pub fn fft(
@@ -87,7 +73,7 @@ impl FourierTransformer {
             "window size exceeds singal length"
         );
 
-        let window = self.hann_window(window_size).to_vec();
+        let window = get_hann_window(window_size).to_vec();
         let frame_count = (samples.len() - window_size) / hop_size + 1;
         let bins = window_size / 2 + 1;
 
@@ -131,9 +117,7 @@ pub fn par_stft(
         samples.len(),
     );
 
-    let window = (0..window_size)
-        .map(|n| (PI * n as f32 / (window_size as f32 - 1.0)).sin().powi(2))
-        .collect::<Vec<_>>();
+    let window = get_hann_window(window_size);
 
     let frame_count = (samples.len() - window_size) / hop_size + 1;
     let bins = window_size / 2 + 1;

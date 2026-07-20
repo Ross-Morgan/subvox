@@ -1,8 +1,8 @@
 //! Linear Predictive Coding (LPC)
 
-use std::f32::consts::PI;
-
 use rayon::prelude::*;
+
+use crate::windowing::get_hann_window;
 
 pub struct LpcResult {
     pub data: Vec<f32>,
@@ -22,9 +22,7 @@ pub fn par_lpc(samples: &[f32], window_size: usize, hop_size: usize, order: usiz
     );
 
     // TODO: Remove hardcoded window function
-    let window = (0..window_size)
-        .map(|n| (PI * n as f32 / (window_size as f32 - 1.0)).sin().powi(2))
-        .collect::<Vec<_>>();
+    let window = get_hann_window(window_size);
 
     let frame_count = (samples.len() - window_size) / hop_size + 1;
 

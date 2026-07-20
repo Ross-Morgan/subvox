@@ -1,21 +1,47 @@
-pub fn linear_regression_slope(x: &[f32], y: &[f32]) -> f32 {
+pub struct LinearRegression {
+    pub slope: f32,
+    pub intercept: f32,
+}
+
+pub fn linear_regression(x: &[f32], y: &[f32]) -> LinearRegression {
+    assert!(x.len() <= y.len());
+
     let n = x.len() as f32;
-    let mean_x = x.iter().sum::<f32>() / n;
-    let mean_y = y.iter().sum::<f32>() / n;
+
+    let mut mean_x = 0.0;
+    let mut mean_y = 0.0;
+
+    let mut i = 0;
+
+    while i < x.len() {
+        mean_x += x[i];
+        mean_y += y[i];
+        i += 1;
+    }
+
+    mean_x /= n;
+    mean_y /= n;
 
     let mut cov = 0.0f32;
     let mut var_x = 0.0f32;
-    for (&xi, &yi) in x.iter().zip(y.iter()) {
-        let dx = xi - mean_x;
-        cov += dx * (yi - mean_y);
+
+    i = 0;
+
+    while i < x.len() {
+        let dx = x[i] - mean_x;
+        cov += dx * (y[i] - mean_y);
         var_x += dx * dx;
+        i += 1;
     }
 
-    if var_x.abs() < f32::EPSILON {
+    let slope = if var_x.abs() < f32::EPSILON {
         0.0
     } else {
         cov / var_x
-    }
+    };
+
+    let intercept = mean_y - slope * mean_x;
+    LinearRegression { slope, intercept }
 }
 
 pub fn find_local_minima(data: &[f32], min_idx: usize, max_idx: usize) -> Vec<usize> {
@@ -48,29 +74,7 @@ pub fn find_local_maxima(data: &[f32], min_idx: usize, max_idx: usize) -> Vec<us
     peaks
 }
 
-pub fn linear_regression_full(x: &[f32], y: &[f32]) -> (f32, f32) {
-    let n = x.len() as f32;
-    let mean_x = x.iter().sum::<f32>() / n;
-    let mean_y = y.iter().sum::<f32>() / n;
-
-    let mut cov = 0.0f32;
-    let mut var_x = 0.0f32;
-    for (&xi, &yi) in x.iter().zip(y.iter()) {
-        let dx = xi - mean_x;
-        cov += dx * (yi - mean_y);
-        var_x += dx * dx;
-    }
-
-    let slope = if var_x.abs() < f32::EPSILON {
-        0.0
-    } else {
-        cov / var_x
-    };
-    let intercept = mean_y - slope * mean_x;
-    (slope, intercept)
-}
-
-pub fn parabolic_interpolate(data: &[f32], peak_idx: usize) -> f32 {
+pub const fn parabolic_interpolate(data: &[f32], peak_idx: usize) -> f32 {
     if peak_idx == 0 || peak_idx == data.len() - 1 {
         return peak_idx as f32;
     }
