@@ -3,3 +3,5 @@ name = "subvox-frontend"
 edition = "2024"
 version = "0.1.0"
 [dependencies]
+eframe = "0.35.0"
+mimalloc = "0.1.52"
