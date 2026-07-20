@@ -1,6 +1,11 @@
 #[global_allocator]
 static GLOBAL: mimalloc::MiMalloc = mimalloc::MiMalloc;
 
+// TODO:
+// 1. Unify sequential and parallel apis
+// 2. Proper error handling
+// 3. Probably many other things that I can't think of right now
+
 mod audio;
 mod cepstrum;
 mod fft;
@@ -8,6 +13,7 @@ mod lpc;
 mod notes;
 mod shr;
 mod tilt;
+mod windowing;
 
 // Pitch detection algorithms
 pub mod pitch;

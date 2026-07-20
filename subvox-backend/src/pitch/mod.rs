@@ -27,6 +27,9 @@ pub fn combined_pitch_estimate(
     max_frequency: f32,
     algorithm_distribution: PitchAlgorithmCandidateDistribution,
 ) -> Vec<NoteKey> {
+    #[cfg(debug_assertions)]
+    println!("Computing CPP pitch candidates...");
+
     let cpp_candidates = cpp_pitch_candidates(
         cepstra,
         sample_rate as f32,
@@ -34,6 +37,10 @@ pub fn combined_pitch_estimate(
         max_frequency,
         algorithm_distribution.cpp,
     );
+
+    #[cfg(debug_assertions)]
+    println!("Computing HPS pitch candidates...");
+
     let hps_candidates = hps_pitch_candidates(
         spectra,
         sample_rate as f32,
@@ -42,6 +49,10 @@ pub fn combined_pitch_estimate(
         5,
         algorithm_distribution.hps,
     );
+
+    #[cfg(debug_assertions)]
+    println!("Computing YIN pitch candidates...");
+
     let yin_candidates = yin_pitch_candidates(
         frames,
         window_size,
@@ -52,6 +63,9 @@ pub fn combined_pitch_estimate(
         0.1,
         algorithm_distribution.yin,
     );
+
+    #[cfg(debug_assertions)]
+    println!("Merging pitch candidates...");
 
     cpp_candidates
         .candidates
@@ -65,12 +79,18 @@ pub fn combined_pitch_estimate(
                 map.entry(Note::new(cpp_candidate.frequency).key())
                     .and_modify(|p| *p += cpp_candidate.prominence)
                     .or_insert(cpp_candidate.prominence);
+
+                #[cfg(debug_assertions)]
+                dbg!(cpp_candidate.prominence);
             }
 
             for hps_candidate in hps.iter() {
                 map.entry(Note::new(hps_candidate.frequency).key())
                     .and_modify(|p| *p += hps_candidate.prominence)
                     .or_insert(hps_candidate.prominence);
+
+                #[cfg(debug_assertions)]
+                dbg!(hps_candidate.prominence);
             }
 
             // TODO: No idea what range `cmnd_value` can lie in. Experiment.
@@ -78,6 +98,9 @@ pub fn combined_pitch_estimate(
                 map.entry(Note::new(yin_candidate.frequency).key())
                     .and_modify(|p| *p += yin_candidate.cmnd_value.recip())
                     .or_insert(yin_candidate.cmnd_value.recip());
+
+                #[cfg(debug_assertions)]
+                dbg!(yin_candidate.cmnd_value.recip());
             }
 
             *map.iter()
