@@ -16,9 +16,7 @@ const WINDOW_SIZE: usize = 2usize.pow(18);
 const HOP_SIZE: usize = 1024;
 // const LPC_ORDER: usize = 12;
 
-fn main() -> color_eyre::Result<()> {
-    // color_eyre::install()?;
-
+fn main() {
     #[cfg(debug_assertions)]
     println!("Loading audio file...");
 
@@ -112,6 +110,4 @@ fn main() -> color_eyre::Result<()> {
     // println!("Pitch duration: {}us", pitch_duration.as_micros());
 
     // black_box(notes);
-
-    Ok(())
 }

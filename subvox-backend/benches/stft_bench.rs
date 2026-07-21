@@ -4,7 +4,7 @@ use criterion::{Criterion, criterion_group, criterion_main};
 use subvox_backend::{FourierTransformer, load_audio_file};
 
 fn bench_small_seq_stft(c: &mut Criterion) {
-    let file = load_audio_file("../assets/growl.wav").unwrap();
+    let file = load_audio_file("../assets/sixteen-tons.wav").unwrap();
     let frames = file.to_f32_vec();
     let mut transformer = FourierTransformer::new();
 
@@ -30,7 +30,7 @@ fn bench_small_seq_stft(c: &mut Criterion) {
 }
 
 fn bench_small_par_stft(c: &mut Criterion) {
-    let file = load_audio_file("../assets/growl.wav").unwrap();
+    let file = load_audio_file("../assets/sixteen-tons.wav").unwrap();
     let frames = file.to_f32_vec();
     let mut planner = realfft::RealFftPlanner::<f32>::new();
     let mut group = c.benchmark_group("small_par_stft");

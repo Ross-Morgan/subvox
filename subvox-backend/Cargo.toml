@@ -5,10 +5,8 @@ edition = "2024"
 
 [dependencies]
 bytemuck = { version = "1.25.1", features = ["derive", "track_caller"] }
-color-eyre = "0.6.5"
 memmap2 = "0.9.11"
 mimalloc = "0.1.52"
-phastft = { version = "0.4.0", features = ["parallel"] }
 rayon = "1.12.0"
 realfft = { version = "3.5.0", features = ["avx", "neon", "sse"] }
 
