@@ -10,6 +10,7 @@ pub struct LpcResult {
     pub error_energy: Vec<f32>,
 }
 
+/// Linear Predictive Coding over
 pub fn par_lpc(samples: &[f32], window_size: usize, hop_size: usize, order: usize) -> LpcResult {
     assert!(hop_size > 0, "hop_size must be non-zero");
     assert!(

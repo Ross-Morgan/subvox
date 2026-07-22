@@ -16,6 +16,7 @@ pub struct PitchAlgorithmCandidateDistribution {
     pub yin: usize,
 }
 
+// TODO: Improve voting. This hardly works and doesn't normalise different algorithms' output ranges
 pub fn combined_pitch_estimate(
     frames: &[f32],
     spectra: &StftResult,
@@ -80,7 +81,6 @@ pub fn combined_pitch_estimate(
                     .and_modify(|p| *p += cpp_candidate.prominence)
                     .or_insert(cpp_candidate.prominence);
 
-                #[cfg(debug_assertions)]
                 dbg!(cpp_candidate.prominence);
             }
 
@@ -89,7 +89,6 @@ pub fn combined_pitch_estimate(
                     .and_modify(|p| *p += hps_candidate.prominence)
                     .or_insert(hps_candidate.prominence);
 
-                #[cfg(debug_assertions)]
                 dbg!(hps_candidate.prominence);
             }
 
@@ -99,7 +98,6 @@ pub fn combined_pitch_estimate(
                     .and_modify(|p| *p += yin_candidate.cmnd_value.recip())
                     .or_insert(yin_candidate.cmnd_value.recip());
 
-                #[cfg(debug_assertions)]
                 dbg!(yin_candidate.cmnd_value.recip());
             }
 
