@@ -3,7 +3,8 @@ pub struct LinearRegression {
     pub intercept: f32,
 }
 
-pub fn linear_regression(x: &[f32], y: &[f32]) -> LinearRegression {
+/// Performs linear regression on the given data
+pub const fn linear_regression(x: &[f32], y: &[f32]) -> LinearRegression {
     assert!(x.len() <= y.len());
 
     let n = x.len() as f32;
@@ -44,36 +45,81 @@ pub fn linear_regression(x: &[f32], y: &[f32]) -> LinearRegression {
     LinearRegression { slope, intercept }
 }
 
+/// Finds the local minima in the given data range.
+///
+/// # Panics
+///
+/// - `max_idx >= data.len()`
+/// - `min_idx > max_idx`
 pub fn find_local_minima(data: &[f32], min_idx: usize, max_idx: usize) -> Vec<usize> {
+    debug_assert!(
+        max_idx < data.len(),
+        "max_idx ({max_idx}) must be less than the length of the data ({})",
+        data.len()
+    );
+    debug_assert!(
+        min_idx <= max_idx,
+        "min_idx ({min_idx}) must be less than or equal to max_idx ({max_idx})"
+    );
+
+    let last_idx = data.len() - 1;
+
     let mut minima = Vec::new();
 
     for i in min_idx..=max_idx {
-        let lower_than_prev = i == 0 || data[i] < data[i - 1];
-        let lower_than_next = i == data.len() - 1 || data[i] < data[i + 1];
-
-        if lower_than_prev && lower_than_next {
-            minima.push(i);
+        // SAFETY: out-of-bounds cases are handled before any unsafe indexing occurs
+        // REVIEW: performance differences between safe and unsafe indexing (it's probably not significant but whatever)
+        unsafe {
+            let curr = *data.get_unchecked(i);
+            let lower_than_prev = i == 0 || curr < *data.get_unchecked(i - 1);
+            let lower_than_next = i == last_idx || curr < *data.get_unchecked(i + 1);
+            if lower_than_prev && lower_than_next {
+                minima.push(i);
+            }
         }
     }
 
     minima
 }
 
+/// Finds the local maxima in the given data range.
+///
+/// # Panics
+///
+/// - `max_idx >= data.len()`
+/// - `min_idx > max_idx`
 pub fn find_local_maxima(data: &[f32], min_idx: usize, max_idx: usize) -> Vec<usize> {
-    let mut peaks = Vec::new();
+    debug_assert!(
+        max_idx < data.len(),
+        "max_idx ({max_idx}) must be less than the length of the data ({})",
+        data.len()
+    );
+    debug_assert!(
+        min_idx <= max_idx,
+        "min_idx ({min_idx}) must be less than or equal to max_idx ({max_idx})"
+    );
+
+    let last_idx = data.len() - 1;
+
+    let mut minima = Vec::new();
 
     for i in min_idx..=max_idx {
-        let higher_than_prev = i == 0 || data[i] > data[i - 1];
-        let higher_than_next = i == data.len() - 1 || data[i] > data[i + 1];
-
-        if higher_than_prev && higher_than_next {
-            peaks.push(i);
+        // SAFETY: out-of-bounds cases are handled before any unsafe indexing occurs
+        // REVIEW: refer to previous REVIEW comment
+        unsafe {
+            let curr = *data.get_unchecked(i);
+            let greater_than_prev = i == 0 || curr > *data.get_unchecked(i - 1);
+            let greater_than_next = i == last_idx || curr > *data.get_unchecked(i + 1);
+            if greater_than_prev && greater_than_next {
+                minima.push(i);
+            }
         }
     }
 
-    peaks
+    minima
 }
 
+/// Performs [parabolic interpolation](https://en.wikipedia.org/wiki/Successive_parabolic_interpolation) on the given peak index.
 pub const fn parabolic_interpolate(data: &[f32], peak_idx: usize) -> f32 {
     if peak_idx == 0 || peak_idx == data.len() - 1 {
         return peak_idx as f32;

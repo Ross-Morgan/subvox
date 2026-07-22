@@ -33,6 +33,7 @@ pub fn load_audio_file<P: AsRef<Path>>(path: P) -> Result<audio::WavFile, std::i
 
     let extension = path.extension().unwrap_or_default().to_ascii_lowercase();
 
+    // TODO: Use a more robust method to do this
     if extension != "wav" {
         Command::new("ffmpeg")
             .arg("-i")
