@@ -1,4 +1,6 @@
-/target
+**/target
+**/main.rs
+Cargo.lock
 
 # Benchmark related files
 flamegraph.svg
